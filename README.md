@@ -1,22 +1,15 @@
-### Vite + React + Tailwind CSS Template
+### MediaPipe Hand Tracker
 
-A minimal and fast starter template for building modern web apps using [Vite](https://vitejs.dev/), [React](https://reactjs.org/), and [Tailwind CSS](https://tailwindcss.com/).
+A simple web app that uses MediaPipe to track hand movements in real-time using your webcam. Built with React, Vite, and Tailwind CSS.
 
-- Lightning-fast Vite bundler
-- React 18 support
-- Tailwind CSS v3 utility-first styling
-- Minimal boilerplate for a clean start
+### Installation
 
-### Getting Started
-
-1. Clone the Template
-   npx degit your-username/vite-react-tailwind-template my-app
-   cd my-app
-
-2. Install Dependencies
-   npm install
-
-3. Start the Server
-   npm run dev
+```bash
+git clone https://github.com/samanthacabrera/mediapipe-hand-tracker
+cd mediapipe-hand-tracker
+npm install
+npm run dev
+```
 
 The app will be available at http://localhost:5173.
+This app uses your webcam. Be sure to allow camera access when prompted.
