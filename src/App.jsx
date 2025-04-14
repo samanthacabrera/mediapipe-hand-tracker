@@ -3,10 +3,10 @@ import * as handPoseDetection from '@tensorflow-models/hand-pose-detection';
 import * as tf from '@tensorflow/tfjs-core';
 import '@tensorflow/tfjs-backend-webgl';
 
-
 export default function App() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const loadModel = async () => {
@@ -26,6 +26,10 @@ export default function App() {
           const hands = await detector.estimateHands(videoRef.current);
           const canvas = canvasRef.current;
           const ctx = canvas.getContext('2d');
+
+          // Match canvas size to video
+          canvas.width = videoRef.current.videoWidth;
+          canvas.height = videoRef.current.videoHeight;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
           hands.forEach(hand => {
@@ -55,6 +59,7 @@ export default function App() {
             ctx.stroke();
           });
         }
+
         requestAnimationFrame(detect);
       };
 
@@ -62,7 +67,14 @@ export default function App() {
     };
 
     const setupCamera = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user', // use front camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
       videoRef.current.srcObject = stream;
 
       return new Promise((resolve) => {
@@ -73,14 +85,25 @@ export default function App() {
       });
     };
 
-
     setupCamera().then(loadModel);
   }, []);
 
   return (
-    <div className="relative w-full h-screen flex justify-center items-center bg-black">
-      <video ref={videoRef} className="absolute" width="640" height="480" />
-      <canvas ref={canvasRef} width="640" height="480" className="absolute" />
+    <div
+      ref={containerRef}
+      className="relative w-full h-screen flex justify-center items-center bg-black transition-colors duration-500 overflow-hidden"
+    >
+      <video
+        ref={videoRef}
+        className="absolute w-full h-full object-cover"
+        playsInline
+        autoPlay
+        muted
+      />
+      <canvas
+        ref={canvasRef}
+        className="absolute w-full h-full"
+      />
     </div>
   );
 }
