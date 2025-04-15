@@ -4,40 +4,41 @@ import * as tf from '@tensorflow/tfjs-core';
 import '@tensorflow/tfjs-backend-webgl';
 
 export default function App() {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
+  const videoRef = useRef(null); // webcam video
+  const canvasRef = useRef(null); // where we draw
+  const containerRef = useRef(null); // container div
 
   useEffect(() => {
     const loadModel = async () => {
-      // set WebGL as the backend for TensorFlow.js
-      await tf.setBackend('webgl');
-      await tf.ready();
-      // initialize the MediaPipe hands model
+      await tf.setBackend('webgl'); // use GPU
+      await tf.ready(); // wait till TF is ready
+
+      // load MediaPipe hands model
       const model = handPoseDetection.SupportedModels.MediaPipeHands;
       const detector = await handPoseDetection.createDetector(model, {
         runtime: 'mediapipe',
-        modelType: 'lite',
+        modelType: 'lite', // smaller + faster model
         solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
       });
 
       const detect = async () => {
+        // wait until video is ready
         if (videoRef.current.readyState === 4) {
-          const hands = await detector.estimateHands(videoRef.current);
+          const hands = await detector.estimateHands(videoRef.current); // get hand keypoints
           const canvas = canvasRef.current;
           const ctx = canvas.getContext('2d');
 
-          // Match canvas size to video
+          // match canvas size to video
           canvas.width = videoRef.current.videoWidth;
           canvas.height = videoRef.current.videoHeight;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.clearRect(0, 0, canvas.width, canvas.height); // clear previous frame
 
           hands.forEach(hand => {
-            // Fingertip keypoints: [4, 8, 12, 16, 20]
+            // only get fingertip points
             const tipIndexes = [4, 8, 12, 16, 20];
             const fingertips = hand.keypoints.filter((_, i) => tipIndexes.includes(i));
 
-            // Draw dots on fingertips
+            // draw dots on each fingertip
             fingertips.forEach(point => {
               ctx.beginPath();
               ctx.arc(point.x, point.y, 8, 0, 2 * Math.PI);
@@ -45,7 +46,7 @@ export default function App() {
               ctx.fill();
             });
 
-            // Draw lines between fingertips
+            // draw lines between fingertips
             ctx.beginPath();
             fingertips.forEach((point, i) => {
               if (i === 0) {
@@ -60,16 +61,17 @@ export default function App() {
           });
         }
 
-        requestAnimationFrame(detect);
+        requestAnimationFrame(detect); // repeat
       };
 
-      detect();
+      detect(); // start loop
     };
 
     const setupCamera = async () => {
+      // ask for webcam access
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'user', // use front camera on mobile
+          facingMode: 'user', // front cam
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -79,12 +81,13 @@ export default function App() {
 
       return new Promise((resolve) => {
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play();
+          videoRef.current.play(); // start webcam
           resolve();
         };
       });
     };
 
+    // set up camera, then load model
     setupCamera().then(loadModel);
   }, []);
 
