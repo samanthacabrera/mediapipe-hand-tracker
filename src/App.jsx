@@ -1,59 +1,53 @@
-import { useEffect, useRef } from 'react';
-import * as handPoseDetection from '@tensorflow-models/hand-pose-detection';
-import * as tf from '@tensorflow/tfjs-core';
-import '@tensorflow/tfjs-backend-webgl';
+import { useEffect, useRef } from 'react'; // React hooks
+import * as handPoseDetection from '@tensorflow-models/hand-pose-detection'; // Hand detection model
+import * as tf from '@tensorflow/tfjs-core'; // TensorFlow core
+import '@tensorflow/tfjs-backend-webgl'; // WebGL backend for GPU (Graphics Processing Unit)
 
 export default function App() {
-  const videoRef = useRef(null); // webcam video
-  const canvasRef = useRef(null); // where we draw
-  const containerRef = useRef(null); // container div
+  const videoRef = useRef(null); // Ref to webcam video element
+  const canvasRef = useRef(null); // Ref to canvas for drawing
 
   useEffect(() => {
+    // Load TensorFlow backend and hand detection model
     const loadModel = async () => {
-      await tf.setBackend('webgl'); // use GPU
-      await tf.ready(); // wait till TF is ready
+      await tf.setBackend('webgl'); // Use GPU for faster computation
+      await tf.ready(); // Ensure TensorFlow is initialized
 
-      // load MediaPipe hands model
-      const model = handPoseDetection.SupportedModels.MediaPipeHands;
+      const model = handPoseDetection.SupportedModels.MediaPipeHands; // Choose hand model
       const detector = await handPoseDetection.createDetector(model, {
-        runtime: 'mediapipe',
-        modelType: 'lite', // smaller + faster model
-        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+        runtime: 'mediapipe', // Use MediaPipe runtime
+        modelType: 'lite', // Lightweight version of the model
+        solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands', // Load model scripts
       });
 
+      // Detect hands and draw keypoints in a loop
       const detect = async () => {
-        // wait until video is ready
-        if (videoRef.current.readyState === 4) {
-          const hands = await detector.estimateHands(videoRef.current); // get hand keypoints
-          const canvas = canvasRef.current;
-          const ctx = canvas.getContext('2d');
+        if (videoRef.current.readyState === 4) { // Ensure video is ready
+          const hands = await detector.estimateHands(videoRef.current); // Detect hands
 
-          // match canvas size to video
-          canvas.width = videoRef.current.videoWidth;
-          canvas.height = videoRef.current.videoHeight;
-          ctx.clearRect(0, 0, canvas.width, canvas.height); // clear previous frame
+          const canvas = canvasRef.current; // Get canvas element
+          const ctx = canvas.getContext('2d'); // Get drawing context
+
+          canvas.width = videoRef.current.videoWidth; // Match video width
+          canvas.height = videoRef.current.videoHeight; // Match video height
+          ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous frame
 
           hands.forEach(hand => {
-            // only get fingertip points
-            const tipIndexes = [4, 8, 12, 16, 20];
-            const fingertips = hand.keypoints.filter((_, i) => tipIndexes.includes(i));
+            const tipIndexes = [4, 8, 12, 16, 20]; // Indexes for fingertips
+            const fingertips = hand.keypoints.filter((_, i) => tipIndexes.includes(i)); // Extract fingertips
 
-            // draw dots on each fingertip
+            // Draw circles at each fingertip
             fingertips.forEach(point => {
               ctx.beginPath();
-              ctx.arc(point.x, point.y, 8, 0, 2 * Math.PI);
+              ctx.arc(point.x, point.y, 8, 0, 2 * Math.PI); 
               ctx.fillStyle = '#BBD3DD';
               ctx.fill();
             });
 
-            // draw lines between fingertips
+            // Draw lines connecting fingertips
             ctx.beginPath();
             fingertips.forEach((point, i) => {
-              if (i === 0) {
-                ctx.moveTo(point.x, point.y);
-              } else {
-                ctx.lineTo(point.x, point.y);
-              }
+              i === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y);
             });
             ctx.strokeStyle = 'white';
             ctx.lineWidth = 2;
@@ -61,47 +55,46 @@ export default function App() {
           });
         }
 
-        requestAnimationFrame(detect); // repeat
+        requestAnimationFrame(detect); // Loop the detection
       };
 
-      detect(); // start loop
+      detect(); // Start detection loop
     };
 
+    // Set up the user's webcam
     const setupCamera = async () => {
-      // ask for webcam access
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'user', // front cam
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          facingMode: 'user', // Use front camera
+          width: { ideal: 1280 }, // Ideal video width
+          height: { ideal: 720 }, // Ideal video height
         },
-        audio: false,
+        audio: false, // No audio needed
       });
-      videoRef.current.srcObject = stream;
 
-      return new Promise((resolve) => {
+      videoRef.current.srcObject = stream; // Assign stream to video element
+
+      // Wait until video metadata is loaded
+      return new Promise(resolve => {
         videoRef.current.onloadedmetadata = () => {
-          videoRef.current.play(); // start webcam
+          videoRef.current.play(); // Start video
           resolve();
         };
       });
     };
 
-    // set up camera, then load model
-    setupCamera().then(loadModel);
-  }, []);
+    setupCamera().then(loadModel); // Start after camera is ready
+  }, []); // Run once on mount
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-screen flex justify-center items-center bg-black transition-colors duration-500 overflow-hidden"
-    >
+    // Fullscreen container
+    <div className="relative w-full h-screen flex justify-center items-center bg-black transition-colors duration-500 overflow-hidden">
       <video
         ref={videoRef}
         className="absolute w-full h-full object-cover"
-        playsInline
-        autoPlay
-        muted
+        playsInline // Needed for mobile
+        autoPlay // Start playing immediately
+        muted // No sound
       />
       <canvas
         ref={canvasRef}
