@@ -42,7 +42,7 @@ User must allow camera access when prompted.
 
 ---
 
-### How hand detection works
+### How the hand detection works
 
 1. Set up the TensorFlow Environment
 

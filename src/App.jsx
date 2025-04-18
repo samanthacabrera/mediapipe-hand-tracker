@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'; // React hooks
 import * as handPoseDetection from '@tensorflow-models/hand-pose-detection'; // Hand detection model
 import * as tf from '@tensorflow/tfjs-core'; // TensorFlow core
 import '@tensorflow/tfjs-backend-webgl'; // WebGL backend for GPU (Graphics Processing Unit)
+import HandEffects from './HandEffects';
 
 export default function App() {
   const videoRef = useRef(null); // Ref to webcam video element
@@ -100,6 +101,7 @@ export default function App() {
         ref={canvasRef}
         className="absolute w-full h-full"
       />
+      <HandEffects videoRef={videoRef} canvasRef={canvasRef} />
     </div>
   );
 }
